@@ -228,10 +228,10 @@ const addDepartment = () => {
       name: 'department',
     },
   ])
-    .then(answer => {
+    .then(results => {
       const mysql = `INSERT INTO department (department_name) VALUES (?)`;
-      db.query(mysql, answer.department, (err, results) => err ? console.log(err) : viewDepartments(results), startQuestion();
-      });};
+      db.query(mysql, results.department, (err, results) => { err ? console.log(err) : viewDepartments(results), startQuestion();
+      });
 // Read list of all employees and associated department, roles, manager using LEFT JOIN
 const viewRoster = () => {
   const mysql =
