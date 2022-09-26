@@ -17,7 +17,6 @@ const db = mysql.createConnection(
   },
   console.log(`Connected to the employee_db database.`)
 );
-
 //inquirer opening question
 startQuestion = () => {
   return inquirer.prompt([
@@ -62,7 +61,6 @@ startQuestion = () => {
       }
     })
 };
-
 // Read all employees
 const viewEmployees = () => {
 
@@ -215,7 +213,7 @@ const addRole = () => {
       startQuestion();
     })
 }
-// Read all roles
+// Read all departments
 const viewDepartments = () => {
 
   const mysql = `SELECT id, department_name FROM department`;
