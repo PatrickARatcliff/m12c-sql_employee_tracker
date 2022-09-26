@@ -17,6 +17,10 @@ const db = mysql.createConnection(
   },
   console.log(`Connected to the employee_db database.`)
 );
+
+db.connect((err) =>{
+  err ? console.log(err) : startQuestion();
+})
 //inquirer opening question
 startQuestion = () => {
   return inquirer.prompt([
@@ -53,7 +57,7 @@ startQuestion = () => {
           addDepartment();
           break;
         case "Quit":
-          quit();
+          db.end();
           break;
         case "View Company Roster":
           viewRoster();
@@ -66,12 +70,12 @@ const viewEmployees = () => {
 
   const mysql = `SELECT * FROM employee`;
 
-  db.query(mysql, (err, rows) => {
+  db.query(mysql, (err, results) => {
     if (err) {
-      console.status(500).log({ error: err.message });
+      console.log(err);
       return;
     }
-    console.table(rows);
+    console.table(results);
     startQuestion();
   })
 };
@@ -105,12 +109,12 @@ const addEmployee = () => {
     VALUES (?,?,?,?)`;
   const params = [answer.first_name, answer.last_name, answer.role_id, answer.manager_id,];
   
-  db.query(mysql, params, (err) => {
+  db.query(mysql, params, (err, results) => {
     if (err) {
-      console.status(400).log({ error: err.message });
+      console.log(err);
       return;
     }
-    viewEmployees();
+    viewEmployees(results);
     startQuestion();
   })})
 };
@@ -136,15 +140,15 @@ const updateEmployee = () => {
   const mysql = `UPDATE employee SET employee = ? WHERE id = ?`;
   const params = [answer.first_name, answer.last_name, answer.role_id, answer.manager_id,];
 
-  db.query(mysql, params, (err, result) => {
+  db.query(mysql, params, (err, results) => {
     if (err) {
-      console.status(400).log({ error: err.message });
-    } else if (!result.affectedRows) {
+      console.log(err);
+    } else if (!results.affectedRows) {
       console.log({
         message: 'employee not found'
       });
     } else {
-      console.log(result.affectedRows);
+      console.log(results.affectedRows);
       startQuestion();
     }
   })
@@ -154,12 +158,12 @@ const viewRoles = () => {
 
   const mysql = `SELECT employee_role.id, employee_role.title, department.department_name AS department FROM employee_role LEFT JOIN department ON employee_role.department_id = department.id`;
 
-  db.query(mysql, (err, rows) => {
+  db.query(mysql, (err, results) => {
     if (err) {
-      console.status((500).log({ error: err.message }));
+      console.log(err);
       return;
     }
-    console.table(rows);
+    console.table(results);
     startQuestion();
   })
 };
@@ -184,12 +188,12 @@ const addRole = () => {
       const params = [answer.role, answer.salary];
       const roles = `SELECT department_name, id FROM department`
 
-      db.query(roles, params, (err, answers) => {
+      db.query(roles, params, (err, results) => {
         if (err) {
-          console.status((400).log({ error: err.message }));
+          console.log(err);
           return;
         } else {
-          const deptAssign = answers.map(({ department_name, id }) => ({ name: department_name, value: id }));
+          const deptAssign = results.map(({ department_name, id }) => ({ name: department_name, value: id }));
           inquirer.prompt([
             {
               type: 'list',
@@ -202,14 +206,15 @@ const addRole = () => {
               const deptAssign = assignDeptChoice.deptAssign;
               params.push(deptAssign);
               const mysql = `INSERT INTO employee_role (title, salary, department_id) VALUES (?,?,?)`;
-              db.query(mysql, params, (err) => {
+              db.query(mysql, params, (err, results) => {
                 if (err) {
                   return console.log(err)
+                } else{
+                  viewRoles(results);
                 };
               })
             })}
       })
-      viewRoles();
       startQuestion();
     })
 }
@@ -218,12 +223,12 @@ const viewDepartments = () => {
 
   const mysql = `SELECT id, department_name FROM department`;
 
-  db.query(mysql, (err, rows) => {
+  db.query(mysql, (err, results) => {
     if (err) {
-      console.log((500).json({ error: err.message }));
+      console.log(err);;
       return;
     } else {
-      console.table(rows);
+      console.table(results);
     }
   })
 };
@@ -239,11 +244,11 @@ const addDepartment = () => {
   ])
     .then(answer => {
       const mysql = `INSERT INTO department (department_name) VALUES (?)`;
-      db.query(mysql, answer.department, (err, result) => {
+      db.query(mysql, answer.department, (err, results) => {
         if (err) {
           return console.log(err)
         } else {
-        viewDepartments();
+        viewDepartments(results);
         startQuestion();
         }
       });
@@ -269,12 +274,12 @@ const viewRoster = () => {
   ORDER BY 
   employee.id ASC`;
 
-  db.query(mysql, (err, rows) => {
+  db.query(mysql, (err, results) => {
     if (err) {
-      console.log((500).json({ error: err.message }));
+      console.log(err);;
       return;
     }
-    console.table(rows)
+    console.table(results)
   })
 };
 

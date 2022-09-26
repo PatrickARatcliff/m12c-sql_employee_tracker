@@ -1,7 +1,7 @@
 {
-  "name": "28-stu_mini-project",
+  "name": "m12c-sql_employee_tracker",
   "version": "1.0.0",
-  "description": "In this mini-project, you will build Rest API routes for creating, retrieving, and deleting movies from a MySQL database.",
+  "description": "command-line application to manage a company's employee database, using Node.js, Inquirer, and MySQL",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,10 +12,11 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "inquirer": "^9.1.2",
+    "inquirer": "^8.2.4",
     "mysql2": "^2.2.5"
   },
   "devDependencies": {
+    "dotenv": "^16.0.2",
     "nodemon": "^2.0.20"
   }
 }
