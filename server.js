@@ -236,20 +236,18 @@ const addDepartment = () => {
 // Read list of all employees and associated department, roles, manager using LEFT JOIN
 const viewRoster = () => {
   const mysql =
-    `SELECT 
-  employee.id
+  `SELECT 
+  employee.id,
   employee.first_name AS first, 
   employee.last_name AS last, 
   employee_role.title FROM employee_role AS role, 
   department.department_name FROM department AS dept, 
   employee_role.salary FROM employee_role AS salary,
-  CONCAT(manager.first_name, manager.last_name) AS manager FROM employee 
+  CONCAT(employee.first_name, employee.last_name) AS manager FROM employee 
   LEFT JOIN 
   employee_role ON employee.role_id = employee_role.id
   LEFT JOIN 
-  department ON employee_role.department_id = department.id
-  LEFT JOIN 
-  employee manager ON employee.manager_id = manager.id
+  department ON employee_role.department_id = department.id,
   ORDER BY 
   employee.id ASC`;
 
