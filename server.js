@@ -19,7 +19,7 @@ const db = mysql.createConnection(
   console.log(`Connected to the employee_db database.`)
 );
 
-db.connect((err) =>{
+db.connect((err) => {
   err ? console.log(err) : startQuestion();
 })
 //inquirer opening question
@@ -29,7 +29,7 @@ startQuestion = () => {
       type: 'list',
       message: "What would you like to do?",
       name: 'choice',
-      choices: ["View All Employees", "Add Employee", "Update Employee Role", "View All Roles", "Add Role", "View All Departments", "Add Department", "Quit", "View Company Roster"],
+      choices: ["View All Employees", "Add Employee", "Update Employee Manager", "View All Roles", "Add Role", "View All Departments", "Add Department", "Quit", "View Company Roster"],
       loop: false,
     }
   ])
@@ -42,7 +42,7 @@ startQuestion = () => {
         case "Add Employee":
           addEmployee();
           break;
-        case "Update Employee Role":
+        case "Update Employee Manager":
           updateEmployee();
           break;
         case "View All Roles":
@@ -72,12 +72,7 @@ const viewEmployees = () => {
   const mysql = `SELECT * FROM employee`;
 
   db.query(mysql, (err, results) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    console.table(results);
-    startQuestion();
+    err ? console.log(err) : console.table(results), startQuestion();
   })
 };
 // Add Employee
@@ -105,67 +100,68 @@ const addEmployee = () => {
       name: 'manager_id',
     },
   ])
-  .then(answer => {
-  const mysql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+    .then(answer => {
+      const mysql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
     VALUES (?,?,?,?)`;
-  const params = [answer.first_name, answer.last_name, answer.role_id, answer.manager_id,];
-  
-  db.query(mysql, params, (err, results) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    viewEmployees(results);
-    startQuestion();
-  })})
+      const params = [answer.first_name, answer.last_name, answer.role_id, answer.manager_id,];
+
+      db.query(mysql, params, (err, results) => {
+        err ? console.log(err) : viewEmployees(results), startQuestion();
+      })
+    })
 };
 // Update employee
 const updateEmployee = () => {
 
-  const employees = data.map(({ id, first_name, last_name,}) => ({name: first_name + " " + last_name, value: id }));
+  const employeeArr = `SELECT * FROM employee`;
 
-  inquirer.prompt([
-    {
-      type: 'list',
-      message: "Select employee to update",
-      name: 'role',
-      choices: employees
-    },
-  ])
-  .then(employee=> {
-    const update = employee.name;
-    const params = [];
-    params.push(update)
-  })
+  db.query(employeeArr, (err, results) => {
+    const employees = results.map(({ id, first_name, last_name, }) => ({ name: first_name + " " + last_name, value: id }));
 
-  const mysql = `UPDATE employee SET employee = ? WHERE id = ?`;
-  const params = [answer.first_name, answer.last_name, answer.role_id, answer.manager_id,];
+    inquirer.prompt([
+      {
+        type: 'list',
+        message: "Select employee to update",
+        name: 'role',
+        choices: employees
+      },
+    ])
+      .then(selectEmployee => {
+        const update = selectEmployee.name;
+        const params = [];
+        params.push(update);
 
-  db.query(mysql, params, (err, results) => {
-    if (err) {
-      console.log(err);
-    } else if (!results.affectedRows) {
-      console.log({
-        message: 'employee not found'
-      });
-    } else {
-      console.log(results.affectedRows);
-      startQuestion();
-    }
-  })
-};
+        const mgrSelect = `SELECT id FROM employee`;
+
+        db.query(mgrSelect, (err, results) => {
+          const mgr = results.map(({ id, last_name }) => ({ name: last_name, value: id }));
+
+          inquirer.prompt([
+            {
+              type: 'list',
+              meeasge: 'Choose a new manager',
+              name: 'manager',
+              choices: mgr
+            }
+          ])
+            .then(result => {
+              const mgr = result.manager;
+              params.push(mgr);
+              let employee = params[0]
+              params[0] = mgr
+              params[1] = employee
+              const mysql = `UPDATE employee SET manager_id = ? WHERE id = ?`;
+
+              db.query(mysql, params, (err, results) => {
+                  err ? console.log(err) : viewEmployees(results), startQuestion();
+                })})})})})};
 // Read all roles
 const viewRoles = () => {
 
   const mysql = `SELECT employee_role.id, employee_role.title, department.department_name AS department FROM employee_role LEFT JOIN department ON employee_role.department_id = department.id`;
 
   db.query(mysql, (err, results) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    console.table(results);
-    startQuestion();
+    err ? console.log(err) : console.table(results), startQuestion();
   })
 };
 // Add role
@@ -208,15 +204,11 @@ const addRole = () => {
               params.push(deptAssign);
               const mysql = `INSERT INTO employee_role (title, salary, department_id) VALUES (?,?,?)`;
               db.query(mysql, params, (err, results) => {
-                if (err) {
-                  return console.log(err)
-                } else{
-                  viewRoles(results);
-                };
+                err ? console.log(err) : viewRoles(results), startQuestion();
               })
-            })}
+            })
+        }
       })
-      startQuestion();
     })
 }
 // Read all departments
@@ -224,14 +216,7 @@ const viewDepartments = () => {
 
   const mysql = `SELECT id, department_name FROM department`;
 
-  db.query(mysql, (err, results) => {
-    if (err) {
-      console.log(err);;
-      return;
-    } else {
-      console.table(results);
-    }
-  })
+  db.query(mysql, (err, results) => err ? console.log(err) : console.table(results), startQuestion());
 };
 // Add department
 const addDepartment = () => {
@@ -245,16 +230,8 @@ const addDepartment = () => {
   ])
     .then(answer => {
       const mysql = `INSERT INTO department (department_name) VALUES (?)`;
-      db.query(mysql, answer.department, (err, results) => {
-        if (err) {
-          return console.log(err)
-        } else {
-        viewDepartments(results);
-        startQuestion();
-        }
-      });
-    });
-};
+      db.query(mysql, answer.department, (err, results) => err ? console.log(err) : viewDepartments(results), startQuestion();
+      });};
 // Read list of all employees and associated department, roles, manager using LEFT JOIN
 const viewRoster = () => {
   const mysql =
@@ -276,11 +253,7 @@ const viewRoster = () => {
   employee.id ASC`;
 
   db.query(mysql, (err, results) => {
-    if (err) {
-      console.log(err);;
-      return;
-    }
-    console.table(results)
+    err ? console.log(err) : console.table(results), startQuestion();
   })
 };
 
